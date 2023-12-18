@@ -147,20 +147,14 @@ class Exciton : public System {
 
     private:
         // Methods for BSE matrix initialization
-        void STVH0(double, double*);
-        double potential(double);
-        std::complex<double> fourierTransform(arma::rowvec k, const arma::mat&, bool useApproximation = true);
-        double analyticFourierTransform(arma::rowvec);
-        std::complex<double> motifFourierTransform(int, int, const arma::rowvec&, const arma::mat&);
         arma::cx_mat motifFTMatrix(const arma::rowvec&, const arma::mat&);
-        arma::cx_mat extendMotifFT(const arma::cx_mat&);
-        std::complex<double> blochCoherenceFactor(const arma::cx_vec&, const arma::cx_vec&, 
+        std::complex<double> blochCoherenceFactor(const arma::cx_vec&, const arma::cx_vec&,
                                                   const arma::rowvec&, const arma::rowvec&,
                                                   const arma::rowvec&);
 
-        std::complex<double> exactInteractionTermMFT(const arma::cx_vec&, 
+        std::complex<double> exactInteractionTermMFT(const arma::cx_vec&,
                                                 const arma::cx_vec&,
-                                                const arma::cx_vec&, 
+                                                const arma::cx_vec&,
                                                 const arma::cx_vec&,
                                                 const arma::cx_mat&);
         std::complex<double> interactionTermFT(const arma::cx_vec&, 

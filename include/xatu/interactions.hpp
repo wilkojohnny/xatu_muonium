@@ -16,7 +16,7 @@ namespace xatu {
     double coulomb(double);
 
     /* Keldysh potential FT */
-    double keldyshFT(const arma::rowvec&, double, double, double, double, int);
+    double keldyshFT(const arma::rowvec&, double, double, double, double, int, double );
 
     /* Coulomb potential FT */
     double coulombFT(double);
@@ -24,7 +24,9 @@ namespace xatu {
     // ------ Interaction matrix elements ------
 
     /* Real-space interaction */
-    std::complex<double> motifFourierTransform(const arma::rowvec&, const arma::rowvec&, const arma::rowvec&, const arma::mat&);
+    std::complex<double> motifFourierTransform(const arma::rowvec& firstAtom, const arma::rowvec& secondAtom,
+                                               const arma::rowvec& k, const arma::mat& cells, int totalCells,
+                                               double r0, double eps_s, double eps_m, double cutoff, double a);
     arma::cx_mat motifFTMatrix(const arma::rowvec&, const arma::mat&, const arma::mat&);
     arma::cx_mat extendMotifFT(const arma::cx_mat&, int, const arma::mat&, const arma::urowvec&);
     arma::cx_vec sumStateOverOrbitals(const arma::rowvec&, const arma::urowvec&);

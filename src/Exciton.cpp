@@ -8,6 +8,7 @@
 #include "xatu/Exciton.hpp"
 #include "xatu/utils.hpp"
 #include "xatu/davidson.hpp"
+#include "xatu/interactions.hpp"
 
 using namespace arma;
 using namespace std::chrono;
@@ -386,193 +387,6 @@ void Exciton::setExchange(bool exchange){
 }
 
 
-/*---------------------------------------- Potentials ----------------------------------------*/
-
-/** 
- * Purpose: Compute Struve function H0(x).
- * Source: http://jean-pierre.moreau.pagesperso-orange.fr/Cplus/mstvh0_cpp.txt 
- * @param X x --- Argument of H0(x) ( x ò 0 )
- * @param SH0 SH0 --- H0(x). The return value is written to the direction of the pointer.
-*/
-void Exciton::STVH0(double X, double *SH0) {
-    double A0,BY0,P0,Q0,R,S,T,T2,TA0;
-	int K, KM;
-
-        S=1.0;
-        R=1.0;
-        if (X <= 20.0) {
-           A0=2.0*X/PI;
-           for (K=1; K<61; K++) {
-              R=-R*X/(2.0*K+1.0)*X/(2.0*K+1.0);
-              S=S+R;
-              if (fabs(R) < fabs(S)*1.0e-12) goto e15;
-           }
-    e15:       *SH0=A0*S;
-        }
-        else {
-           KM=int(0.5*(X+1.0));
-           if (X >= 50.0) KM=25;
-           for (K=1; K<=KM; K++) {
-              R=-R*pow((2.0*K-1.0)/X,2);
-              S=S+R;
-              if (fabs(R) < fabs(S)*1.0e-12) goto e25;
-           }
-    e25:       T=4.0/X;
-           T2=T*T;
-           P0=((((-.37043e-5*T2+.173565e-4)*T2-.487613e-4)*T2+.17343e-3)*T2-0.1753062e-2)*T2+.3989422793;
-           Q0=T*(((((.32312e-5*T2-0.142078e-4)*T2+0.342468e-4)*T2-0.869791e-4)*T2+0.4564324e-3)*T2-0.0124669441);
-           TA0=X-0.25*PI;
-           BY0=2.0/sqrt(X)*(P0*sin(TA0)+Q0*cos(TA0));
-           *SH0=2.0/(PI*X)*S+BY0;
-        }
-}
-
-
-/** 
- * Calculate value of interaction potential (Keldysh). Units are eV.
- * @details If the distance is zero, then the interaction is renormalized to be V(a) since
- * V(0) is infinite, where a is the lattice parameter. Also, for r > cutoff the interaction is taken to be zero.
- * @param r Distance at which we evaluate the potential.
- * @return Value of Keldysh potential, V(r).
- */
-double Exciton::potential(double r){
-    double eps_bar = (eps_m + eps_s)/2;
-    double SH0;
-    double cutoff = arma::norm(bravaisLattice.row(0)) * cutoff_ + 1E-5;
-    double R = abs(r)/r0;
-    double potential_value;
-    if(r == 0){
-        STVH0(a/r0, &SH0);
-        potential_value = ec/(8E-10*eps0*eps_bar*r0)*(SH0 - y0(a/r0));
-    }
-    else if (r > cutoff){
-        potential_value = 0.0;
-    }
-    else{
-        STVH0(R, &SH0);
-        potential_value = ec/(8E-10*eps0*eps_bar*r0)*(SH0 - y0(R));
-    };
-
-    return potential_value;
-    
-};
-
-/*---------------------------------------- Fourier transforms ----------------------------------------*/
-
-/**
- * Calculate lattice Fourier transform of Keldsyh potential.
- * @param k kpoint where we compute the FT.
- * @param cells Matrix with position of unit cells over which we sum to obtain the lattice FT.
- * @param useApproximation Boolean to toggle simplified FT calculation (one summation instead of two over unit cells).
- * @return Lattice Fourier transform of the potential, lFT[V](k).
- */
-std::complex<double> Exciton::fourierTransform(arma::rowvec k, const arma::mat& cells, bool useApproximation){
-    std::complex<double> imag(0, 1);
-    //std::complex<double> Vk = potential(0);
-    std::complex<double> Vk = 0.0;
-
-    if (useApproximation){
-        for(int n = 0; n < cells.n_rows; n++){
-            arma::rowvec cell = cells.row(n);
-            double module = arma::norm(cell);
-            Vk += potential(module)*std::exp(imag*arma::dot(k, cell));
-	    }
-        Vk *= totalCells;
-    }
-
-    else{ // This might be wrong if already using truncated cells
-        for (int n = 0; n < cells.n_rows; n++){
-            arma::rowvec cell = cells.row(n);
-            for (int m = 0; m < cells.n_rows; m++){
-                arma::rowvec cell2 = cells.row(m);
-                double module = arma::norm(cell - cell2);
-                Vk += potential(module)*std::exp(imag*arma::dot(k, cell - cell2));
-            }
-        }
-    };
-
-    Vk /= pow(totalCells, 2);
-    return Vk;
-};
-
-/**
- * Evaluates the Fourier transform of the Keldysh potential, which is an analytical expression.
- * @param q kpoint where we evaluate the FT.
- * @return Fourier transform of the potential at q, FT[V](q).
- */
-double Exciton::analyticFourierTransform(arma::rowvec q){
-    double radius = cutoff*arma::norm(reciprocalLattice.row(0));
-    double potential = 0;
-    double eps_bar = (eps_m + eps_s)/2;
-    double eps = arma::norm(reciprocalLattice.row(0))/totalCells;
-
-    double qnorm = arma::norm(q);
-    if (qnorm < eps){
-        potential = 0;
-    }
-    else{
-        potential = 1/(qnorm*(1 + r0*qnorm));
-    }
-    
-    potential = potential*ec*1E10/(2*eps0*eps_bar*unitCellArea*totalCells);
-    return potential;
-}
-
-/**
- * Routine to compute the lattice Fourier transform with the potential displaced by some
- * vectors of the motif.
- * @param fAtomIndex Index of first atom of the motif.
- * @param sAtomIndex Index of second atom of the motif.
- * @param k kpoint where we evaluate the FT.
- * @param cells Matrix with the unit cells over which we sum to compute the lattice FT.
- * @return Motif lattice Fourier transform of the Keldysh potential at k.
- */
-std::complex<double> Exciton::motifFourierTransform(int fAtomIndex, int sAtomIndex, const arma::rowvec& k, const arma::mat& cells){
-
-    std::complex<double> imag(0,1);
-    std::complex<double> Vk = 0.0;
-    arma::rowvec firstAtom = motif.row(fAtomIndex).subvec(0, 2);
-    arma::rowvec secondAtom = motif.row(sAtomIndex).subvec(0, 2);
-
-    for(int n = 0; n < cells.n_rows; n++){
-        arma::rowvec cell = cells.row(n);
-        double module = arma::norm(cell + firstAtom - secondAtom);
-        Vk += potential(module)*std::exp(imag*arma::dot(k, cell));
-    }
-    Vk /= pow(totalCells, 1);
-
-    return Vk;
-}
-
-/**
- * Method to extend the motif Fourier transform matrix to match the dimension of the
- * one-particle basis. 
- * @param motifFT Matrix storing the motif Fourier transform to be extended.
- * @return Extended matrix.
- */
-arma::cx_mat Exciton::extendMotifFT(const arma::cx_mat& motifFT){
-    arma::cx_mat extendedMFT = arma::zeros<arma::cx_mat>(this->basisdim, this->basisdim);
-    int rowIterator = 0;
-    int colIterator = 0;
-    for(unsigned int atom_index_r = 0; atom_index_r < this->motif.n_rows; atom_index_r++){
-        int species_r = motif.row(atom_index_r)(3);
-        int norbitals_r = orbitals(species_r);
-        colIterator = 0;
-        for(unsigned int atom_index_c = 0; atom_index_c < this->motif.n_rows; atom_index_c++){
-            int species_c = motif.row(atom_index_c)(3);
-            int norbitals_c = orbitals(species_c);
-            extendedMFT.submat(rowIterator, colIterator, 
-                               rowIterator + norbitals_r - 1, colIterator + norbitals_c - 1) = 
-                          motifFT(atom_index_r, atom_index_c) * arma::ones(norbitals_r, norbitals_c);
-            colIterator += norbitals_c;
-        }
-        rowIterator += norbitals_r;
-    }
-
-    return extendedMFT;
-}
-
-
 /*------------------------------------ Interaction matrix elements ------------------------------------*/
 
 /** 
@@ -594,7 +408,8 @@ std::complex<double> Exciton::exactInteractionTermMFT(const arma::cx_vec& coefsK
     
     arma::cx_vec firstCoefArray = arma::conj(coefsK1) % coefsK3;
     arma::cx_vec secondCoefArray = arma::conj(coefsK2) % coefsK4;
-    std::complex<double> term = arma::dot(firstCoefArray, extendMotifFT(motifFT) * secondCoefArray);
+    std::complex<double> term = arma::dot(firstCoefArray, extendMotifFT(motifFT, this->basisdim,
+                                                                        this->motif, this->orbitals) * secondCoefArray);
         
     return term;
 };
@@ -632,7 +447,8 @@ std::complex<double> Exciton::interactionTermFT(const arma::cx_vec& coefsK,
         Ic = blochCoherenceFactor(coefsKQ, coefsK2Q, kQ, k2Q, G);
         Iv = blochCoherenceFactor(coefsK, coefsK2, k, k2, G);
 
-        term += Ic*conj(Iv)*analyticFourierTransform(k - k2 + G);
+        term += Ic*conj(Iv)*keldyshFT(k - k2 + G, r0, eps_s, eps_m, unitCellArea, totalCells,
+                                      arma::norm(reciprocalLattice.row(0))/totalCells);
     }
 
     return term;
@@ -865,7 +681,12 @@ arma::cx_mat Exciton::motifFTMatrix(const arma::rowvec& k, const arma::mat& cell
 
     for(int fAtomIndex = 0; fAtomIndex < natoms; fAtomIndex++){
         for(int sAtomIndex = fAtomIndex; sAtomIndex < natoms; sAtomIndex++){
-            motifFT(fAtomIndex, sAtomIndex) = motifFourierTransform(fAtomIndex, sAtomIndex, k, cells);
+            arma::rowvec firstAtom = motif.row(fAtomIndex).subvec(0, 2);
+            arma::rowvec secondAtom = motif.row(sAtomIndex).subvec(0, 2);
+            motifFT(fAtomIndex, sAtomIndex) = motifFourierTransform(firstAtom, secondAtom,
+                                                                    k, cells, totalCells, r0,
+                                                                    eps_s, eps_m,
+                                                                    arma::norm(bravaisLattice.row(0)) * cutoff_ + 1E-5, a);
             motifFT(sAtomIndex, fAtomIndex) = conj(motifFT(fAtomIndex, sAtomIndex));
         }   
     }
@@ -1472,8 +1293,11 @@ double Exciton::edgeFermiGoldenRule(const Exciton& targetExciton, const arma::cx
     for(int i = 0; i < nk; i++){
         for(int fAtomIndex = 0; fAtomIndex < natoms; fAtomIndex++){
             for(int sAtomIndex = fAtomIndex; sAtomIndex < natoms; sAtomIndex++){
-                ftMotifStack(fAtomIndex, sAtomIndex, i) = 
-                motifFourierTransform(fAtomIndex, sAtomIndex, meshBZ_.row(i) - k, cells);
+                arma::rowvec firstAtom = motif.row(fAtomIndex).subvec(0, 2);
+                arma::rowvec secondAtom = motif.row(sAtomIndex).subvec(0, 2);
+                ftMotifStack(fAtomIndex, sAtomIndex, i) =
+                motifFourierTransform(firstAtom, secondAtom, meshBZ_.row(i) - k, cells, totalCells,
+                                      r0, eps_s, eps_m, cutoff, a);
                 ftMotifStack(sAtomIndex, fAtomIndex, i) = conj(ftMotifStack(fAtomIndex, sAtomIndex, i));
             }   
         }
