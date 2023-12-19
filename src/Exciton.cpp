@@ -38,6 +38,7 @@ void Exciton::initializeExcitonAttributes(int ncell, const arma::ivec& bands,
         this->eps_s_ = parameters(1);
         this->r0_ = parameters(2);
     }
+    this->interactionType_ = "keldysh";
     this->cutoff_     = ncell/2.5; // Default value, seems to preserve crystal point group
 
     if(r0 == 0){
@@ -456,8 +457,16 @@ std::complex<double> Exciton::interactionTermFT(const arma::cx_vec& coefsK,
         Ic = blochCoherenceFactor(coefsKQ, coefsK2Q, kQ, k2Q, G);
         Iv = blochCoherenceFactor(coefsK, coefsK2, k, k2, G);
 
-        term += Ic*conj(Iv)*keldyshFT(k - k2 + G, r0, eps_s, eps_m, unitCellArea, totalCells,
-                                      arma::norm(reciprocalLattice.row(0))/totalCells);
+        if (this->interactionType == "keldysh") {
+            // if Keldysh interaction
+            term += Ic * conj(Iv) * keldyshFT(k - k2 + G, r0, eps_s, eps_m, unitCellArea, totalCells,
+                                              arma::norm(reciprocalLattice.row(0)) / totalCells);
+        } else {
+            std::cout << "coulomb" << std::endl;
+            // if Coulomb interaction
+            term += Ic * conj(Iv) * coulombFT(k - k2 + G, eps_r, unitCellArea, totalCells,
+                                              arma::norm(reciprocalLattice.row(0)) / totalCells);
+        }
     }
 
     return term;
@@ -692,10 +701,17 @@ arma::cx_mat Exciton::motifFTMatrix(const arma::rowvec& k, const arma::mat& cell
         for(int sAtomIndex = fAtomIndex; sAtomIndex < natoms; sAtomIndex++){
             arma::rowvec firstAtom = motif.row(fAtomIndex).subvec(0, 2);
             arma::rowvec secondAtom = motif.row(sAtomIndex).subvec(0, 2);
-            motifFT(fAtomIndex, sAtomIndex) = motifFourierTransform(firstAtom, secondAtom,
-                                                                    k, cells, totalCells, r0,
-                                                                    eps_s, eps_m,
-                                                                    arma::norm(bravaisLattice.row(0)) * cutoff_ + 1E-5, a);
+            if (this->interactionType == "keldysh") {
+                motifFT(fAtomIndex, sAtomIndex) = keldyshMotifFourierTransform(firstAtom, secondAtom,
+                                                                        k, cells, totalCells, r0,
+                                                                        eps_s, eps_m,
+                                                                        arma::norm(bravaisLattice.row(0)) * cutoff_ + 1E-5, a);
+            } else {
+                std::cout << "coulomb" << std::endl;
+                motifFT(fAtomIndex, sAtomIndex) = coulombMotifFourierTransform(firstAtom, secondAtom,
+                                                                               k, cells, totalCells, eps_r,
+                                                                               arma::norm(bravaisLattice.row(0)) * cutoff_ + 1E-5, a);
+            }
             motifFT(sAtomIndex, fAtomIndex) = conj(motifFT(fAtomIndex, sAtomIndex));
         }   
     }
@@ -1304,9 +1320,16 @@ double Exciton::edgeFermiGoldenRule(const Exciton& targetExciton, const arma::cx
             for(int sAtomIndex = fAtomIndex; sAtomIndex < natoms; sAtomIndex++){
                 arma::rowvec firstAtom = motif.row(fAtomIndex).subvec(0, 2);
                 arma::rowvec secondAtom = motif.row(sAtomIndex).subvec(0, 2);
-                ftMotifStack(fAtomIndex, sAtomIndex, i) =
-                motifFourierTransform(firstAtom, secondAtom, meshBZ_.row(i) - k, cells, totalCells,
-                                      r0, eps_s, eps_m, cutoff, a);
+                if (this->interactionType == "keldysh") {
+                    ftMotifStack(fAtomIndex, sAtomIndex, i) =
+                            keldyshMotifFourierTransform(firstAtom, secondAtom, meshBZ_.row(i) - k, cells,
+                                                         totalCells, r0, eps_s, eps_m, cutoff, a);
+                } else {
+                    std::cout << "coulomb" << std::endl;
+                    ftMotifStack(fAtomIndex, sAtomIndex, i) =
+                            coulombMotifFourierTransform(firstAtom, secondAtom, meshBZ_.row(i) - k, cells,
+                                                         totalCells, eps_r, cutoff, a);
+                }
                 ftMotifStack(sAtomIndex, fAtomIndex, i) = conj(ftMotifStack(fAtomIndex, sAtomIndex, i));
             }   
         }

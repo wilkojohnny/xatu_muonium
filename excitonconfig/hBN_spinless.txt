@@ -3,9 +3,11 @@
 hBN_N30
 # ncells
 ! Number of unit cells along each direction
-30
+60
 # bands
 1
+# interaction
+keldysh
 # Dielectric
 1 1 10
 #

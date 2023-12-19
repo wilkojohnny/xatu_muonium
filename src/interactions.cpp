@@ -133,11 +133,11 @@ double keldyshFT(const arma::rowvec& q, double r0, double eps_s, double eps_m, d
  * Evaluates the Fourier transform of the Coulomb potential, which is an analytical expression.
  * @param q kpoint where we evaluate the FT.
  * @param eps_r Dielectric constant the material .
- * @param unitCellVol Volume of unit cell.
+ * @param unitCellArea Volume of unit cell (call this 'area' to be consistent with the rest of the code)
  * @param totalCells Number of unit cells of the system.
  * @return Fourier transform of the potential at q, FT[V](q).
  */
-double coulombFT(const arma::rowvec& q, double eps_r, double unitCellVol, int totalCells, double eps){
+double coulombFT(const arma::rowvec& q, double eps_r, double unitCellArea, int totalCells, double eps){
 
     double potential = 0;
 
@@ -149,7 +149,7 @@ double coulombFT(const arma::rowvec& q, double eps_r, double unitCellVol, int to
         potential = 1/(qnorm * qnorm);
     }
 
-    potential = potential*ec*1E10/(eps0*eps_r*unitCellVol*totalCells);
+    potential = potential*ec*1E10/(eps0*eps_r*unitCellArea*totalCells);
     return potential;
 }
 
@@ -163,9 +163,9 @@ double coulombFT(const arma::rowvec& q, double eps_r, double unitCellVol, int to
  * @param totalCells Number of unit cells of the system.
  * @return Motif lattice Fourier transform of the Keldysh potential at k.
  */
-std::complex<double> motifFourierTransform(const arma::rowvec& firstAtom, const arma::rowvec& secondAtom, 
-                                           const arma::rowvec& k, const arma::mat& cells, int totalCells,
-                                           double r0, double eps_s, double eps_m, double cutoff, double a){
+std::complex<double> keldyshMotifFourierTransform(const arma::rowvec& firstAtom, const arma::rowvec& secondAtom,
+                                                  const arma::rowvec& k, const arma::mat& cells, int totalCells,
+                                                  double r0, double eps_s, double eps_m, double cutoff, double a){
 
     std::complex<double> imag(0,1);
     std::complex<double> Vk = 0.0;
@@ -174,6 +174,33 @@ std::complex<double> motifFourierTransform(const arma::rowvec& firstAtom, const 
         arma::rowvec cell = cells.row(n);
         double module = arma::norm(cell + firstAtom - secondAtom);
         Vk += keldysh(module, r0, eps_s, eps_m, cutoff, a)*std::exp(imag*arma::dot(k, cell));
+    }
+    Vk /= pow(totalCells, 1);
+
+    return Vk;
+}
+
+/**
+ * Routine to compute the lattice Fourier transform with the potential displaced by some
+ * vectors of the motif. Uses Coulomb potential
+ * @param firstAtom Vector of first atom.
+ * @param secondAtom Vector of second atom.
+ * @param k kpoint where we evaluate the FT.
+ * @param cells Matrix with the unit cells over which we sum to compute the lattice FT.
+ * @param totalCells Number of unit cells of the system.
+ * @return Motif lattice Fourier transform of the Keldysh potential at k.
+ */
+std::complex<double> coulombMotifFourierTransform(const arma::rowvec& firstAtom, const arma::rowvec& secondAtom,
+                                                  const arma::rowvec& k, const arma::mat& cells, int totalCells,
+                                                  double eps_r, double cutoff, double a){
+
+    std::complex<double> imag(0,1);
+    std::complex<double> Vk = 0.0;
+
+    for(int n = 0; n < cells.n_rows; n++){
+        arma::rowvec cell = cells.row(n);
+        double module = arma::norm(cell + firstAtom - secondAtom);
+        Vk += coulomb(module, eps_r, cutoff, a)*std::exp(imag*arma::dot(k, cell));
     }
     Vk /= pow(totalCells, 1);
 

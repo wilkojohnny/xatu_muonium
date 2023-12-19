@@ -97,7 +97,8 @@ void ExcitonConfiguration::parseContent(){
         }
         else if(arg == "scissor"){
             excitonInfo.scissor = parseScalar<double>(content[0]);
-        } else if (arg == "interaction") {
+        }
+        else if (arg == "interaction") {
             excitonInfo.interactionType = content[0];
         }
         else{    
@@ -123,6 +124,9 @@ void ExcitonConfiguration::checkContentCoherence(){
     if(excitonInfo.eps.empty()){
         throw std::logic_error("eps must be specified");
     };
+    if (excitonInfo.interactionType != "keldysh" && excitonInfo.interactionType != "coulomb") {
+        throw std::invalid_argument("Interaction type not recognised -- must be Keldysh or Coulomb");
+    }
     if(excitonInfo.nbands == 0 && excitonInfo.bands.empty()){
         throw std::invalid_argument("Must specify 'nbands' or 'bandlist' parameters");
     }
