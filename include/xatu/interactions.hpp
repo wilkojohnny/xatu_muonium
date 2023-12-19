@@ -13,13 +13,13 @@ namespace xatu {
     void STVH0(double, double*);  // Auxiliary routine for Struve function
 
     /* Coulomb potential */
-    double coulomb(double);
+    double coulomb(double, double, double, double);
 
     /* Keldysh potential FT */
     double keldyshFT(const arma::rowvec&, double, double, double, double, int, double );
 
     /* Coulomb potential FT */
-    double coulombFT(double);
+    double coulombFT(const arma::rowvec& q, double eps_r, double unitCellVol, int totalCells, double eps);
 
     // ------ Interaction matrix elements ------
 

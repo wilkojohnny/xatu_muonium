@@ -41,6 +41,7 @@ void ExcitonConfiguration::parseContent(){
         auto content = contents[arg];
 
         if (content.size() == 0){
+            std::cout << arg << std::endl;
             continue;
         }
         else if(content.size() != 1){
@@ -96,6 +97,8 @@ void ExcitonConfiguration::parseContent(){
         }
         else if(arg == "scissor"){
             excitonInfo.scissor = parseScalar<double>(content[0]);
+        } else if (arg == "interaction") {
+            excitonInfo.interactionType = content[0];
         }
         else{    
             std::cout << "Unexpected argument: " << arg << ", skipping block..." << std::endl;
@@ -122,6 +125,12 @@ void ExcitonConfiguration::checkContentCoherence(){
     };
     if(excitonInfo.nbands == 0 && excitonInfo.bands.empty()){
         throw std::invalid_argument("Must specify 'nbands' or 'bandlist' parameters");
+    }
+    if (excitonInfo.interactionType == "coulomb" && excitonInfo.eps.n_elem != 1) {
+        throw std::invalid_argument("Must have only one dielectric constant for Coulomb potential");
+    }
+    if (excitonInfo.interactionType == "keldysh" && excitonInfo.eps.n_elem != 3) {
+        throw std::invalid_argument("Must have three dielectric constants for Keldysh potential");
     }
 };
 

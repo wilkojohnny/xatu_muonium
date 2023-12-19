@@ -39,6 +39,29 @@ double keldysh(double r, double r0, double eps_s, double eps_m, double cutoff, d
 
 }
 
+/**
+ * Calculates the value of the Coulomb potential, in eV.
+ * @details this assumes that V(0)=V(a), and V(r>cutoff)=V(0). [just like Keldysh, might not need to do that really]
+ * @param r: inter-particle distance
+ * @param eps_r: relative permittivity of the material
+ * @param cutoff: distance at which we should say this potential is 0
+ * @param a: Regularization value, i.e. V(0)=V(a).
+ */
+double coulomb(double r, double eps_r, double cutoff, double a) {
+
+    double potential_value = 0.;
+
+    if (r == 0.) {
+        potential_value = coulomb(a, eps_r, cutoff, a);
+    } else if (r > cutoff) {
+        potential_value = 0.;
+    } else{
+        potential_value = ec/(4 * PI * eps0 * eps_r * r * 1e-10); // 1e-10 is to convert angstroms to m (i think thats the units?)
+    }
+
+    return potential_value;
+}
+
 /** 
  * Purpose: Compute Struve function H0(x).
  * Source: http://jean-pierre.moreau.pagesperso-orange.fr/Cplus/mstvh0_cpp.txt 
@@ -103,6 +126,30 @@ double keldyshFT(const arma::rowvec& q, double r0, double eps_s, double eps_m, d
     }
     
     potential = potential*ec*1E10/(2*eps0*eps_bar*unitCellArea*totalCells);
+    return potential;
+}
+
+/**
+ * Evaluates the Fourier transform of the Coulomb potential, which is an analytical expression.
+ * @param q kpoint where we evaluate the FT.
+ * @param eps_r Dielectric constant the material .
+ * @param unitCellVol Volume of unit cell.
+ * @param totalCells Number of unit cells of the system.
+ * @return Fourier transform of the potential at q, FT[V](q).
+ */
+double coulombFT(const arma::rowvec& q, double eps_r, double unitCellVol, int totalCells, double eps){
+
+    double potential = 0;
+
+    double qnorm = arma::norm(q);
+    if (qnorm < eps){
+        potential = 0;
+    }
+    else{
+        potential = 1/(qnorm * qnorm);
+    }
+
+    potential = potential*ec*1E10/(eps0*eps_r*unitCellVol*totalCells);
     return potential;
 }
 

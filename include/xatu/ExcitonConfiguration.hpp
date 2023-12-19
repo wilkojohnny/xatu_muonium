@@ -41,6 +41,8 @@ class ExcitonConfiguration : public ConfigurationBase{
         double scissor = 0.0;
         // Number of reciprocal vectors to use in reciprocal space calculation
         int nReciprocalVectors = 0;
+        // Interaction type (Keldysh or Coulomb)
+        std::string interactionType = "keldysh";
     };
 
     public:

@@ -21,17 +21,23 @@ namespace xatu {
  * @param bands Vector with the indices of the bands that form the exciton.
  * @param parameters Dielectric constants and screening length.
  * @param Q Center-of-mass momentum of the exciton.
- * @return void 
+ * @param interactionType type of electrostatic interaction -- "coulomb" or "keldysh"
+ * @return void
  */
 void Exciton::initializeExcitonAttributes(int ncell, const arma::ivec& bands, 
-                                      const arma::rowvec& parameters, const arma::rowvec& Q){
+                                      const arma::rowvec& parameters, const arma::rowvec& Q,
+                                      const std::string& interactionType){
     this->ncell_      = ncell;
     this->totalCells_ = pow(ncell, ndim);
     this->Q_          = Q;
     this->bands_      = bands;
-    this->eps_m_      = parameters(0);
-    this->eps_s_      = parameters(1);
-    this->r0_         = parameters(2);
+    if (interactionType == "coulomb") {
+        this->eps_r_ = parameters(0);
+    } else {
+        this->eps_m_ = parameters(0);
+        this->eps_s_ = parameters(1);
+        this->r0_ = parameters(2);
+    }
     this->cutoff_     = ncell/2.5; // Default value, seems to preserve crystal point group
 
     if(r0 == 0){
@@ -57,7 +63,7 @@ void Exciton::initializeExcitonAttributes(const ExcitonConfiguration& cfg){
         bands = arma::regspace<arma::ivec>(- nbands + 1, nbands);
     }
 
-    initializeExcitonAttributes(ncell, bands, parameters, Q);
+    initializeExcitonAttributes(ncell, bands, parameters, Q, cfg.excitonInfo.interactionType);
 
     if(cfg.excitonInfo.submeshFactor != 1){
         this->totalCells_ = pow(ncell * cfg.excitonInfo.submeshFactor, ndim);
@@ -94,10 +100,11 @@ void Exciton::initializeExcitonAttributes(const ExcitonConfiguration& cfg){
  * @param Q Center-of-mass momentum.
  */
 Exciton::Exciton(const SystemConfiguration& config, int ncell, const arma::ivec& bands, 
-                  const arma::rowvec& parameters, const arma::rowvec& Q) : 
+                  const arma::rowvec& parameters, const arma::rowvec& Q,
+                  const std::string& interactionType) :
                   System(config) {
 
-    initializeExcitonAttributes(ncell, bands, parameters, Q);
+    initializeExcitonAttributes(ncell, bands, parameters, Q, interactionType);
 
     if (bands.n_elem > basisdim){
         cout << "Error: Number of bands cannot be higher than actual material bands" << endl;
@@ -130,8 +137,8 @@ Exciton::Exciton(const SystemConfiguration& config, int ncell, const arma::ivec&
  * @param Q Center-of-mass momentum.
  */
 Exciton::Exciton(const SystemConfiguration& config, int ncell, int nbands, int nrmbands, 
-                  const arma::rowvec& parameters, const arma::rowvec& Q) : 
-          Exciton(config, ncell, {}, parameters, Q) {
+                  const arma::rowvec& parameters, const arma::rowvec& Q, const std::string& interactionType) :
+          Exciton(config, ncell, {}, parameters, Q, interactionType) {
     
     if (2*nbands > basisdim){
         cout << "Error: Number of bands cannot be higher than actual material bands" << endl;
@@ -156,10 +163,11 @@ Exciton::Exciton(const SystemConfiguration& config, const ExcitonConfiguration& 
 }
 
 Exciton::Exciton(const System& system, int ncell, const arma::ivec& bands, 
-                  const arma::rowvec& parameters, const arma::rowvec& Q) : 
+                  const arma::rowvec& parameters, const arma::rowvec& Q,
+                  const std::string& interactionType) :
                   System(system) {
 
-    initializeExcitonAttributes(ncell, bands, parameters, Q);
+    initializeExcitonAttributes(ncell, bands, parameters, Q, interactionType);
 
     if (bands.n_elem > basisdim){
         cout << "Error: Number of bands cannot be higher than actual material bands" << endl;
@@ -191,8 +199,9 @@ Exciton::Exciton(const System& system, int ncell, const arma::ivec& bands,
  * @param Q Center-of-mass momentum of the exciton.
  */
 Exciton::Exciton(const System& system, int ncell, int nbands, int nrmbands, 
-                  const arma::rowvec& parameters, const arma::rowvec& Q) : 
-          Exciton(system, ncell, {}, parameters, Q) {
+                  const arma::rowvec& parameters, const arma::rowvec& Q,
+                  const std::string& interactionType) :
+          Exciton(system, ncell, {}, parameters, Q, interactionType) {
     
     if (2*nbands > basisdim){
         cout << "Error: Number of bands cannot be higher than actual material bands" << endl;

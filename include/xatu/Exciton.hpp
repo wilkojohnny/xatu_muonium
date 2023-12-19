@@ -26,13 +26,14 @@ class Exciton : public System {
     private:
         // Read-only parameters
         int ncell_, totalCells_, nbands_, nrmbands_, excitonbasisdim_;
-        double eps_m_, eps_s_, r0_, scissor_;
+        double eps_m_, eps_s_, r0_, eps_r_, scissor_;
         arma::ivec bands_, valenceBands_, conductionBands_;
         arma::uvec bandList_;
         arma::imat basisStates_;
         arma::rowvec Q_;
         double cutoff_;
         arma::cx_mat HBS_;
+        std::string interactionType_;
 
         // Flags
         std::string gauge_ = "lattice";
@@ -84,6 +85,11 @@ class Exciton : public System {
         const double& r0 = r0_;
         // Returns cutoff for potential
         const double& cutoff = cutoff_;
+        // Returns relative permittivity for Coulomb potential
+        const double& eps_r = eps_r_;
+        // Returns interaction type
+        const std::string& interactionType = interactionType_;
+
         // Returns gauge for Bloch states
         const std::string gauge = gauge_;
         // Return type of interaction matrix elements
@@ -112,22 +118,26 @@ class Exciton : public System {
     public:
         // Specify number of bands participating (int)
         Exciton(const SystemConfiguration&, int ncell = 20, int nbands = 1, int nrmbands = 0, 
-                 const arma::rowvec& parameters = {1, 5, 1}, const arma::rowvec& Q = {0., 0., 0.});
+                 const arma::rowvec& parameters = {1, 5, 1}, const arma::rowvec& Q = {0., 0., 0.},
+                 const std::string& = "keldysh");
 
         // Specify which bands participate (vector with band numbers)
         Exciton(const SystemConfiguration&, int ncell = 20, const arma::ivec& bands = {0, 1}, 
-                 const arma::rowvec& parameters = {1, 5, 1}, const arma::rowvec& Q = {0., 0., 0.});
+                 const arma::rowvec& parameters = {1, 5, 1}, const arma::rowvec& Q = {0., 0., 0.},
+                 const std::string& = "keldysh");
         
         // Use two files: the mandatory one for system config., and one for exciton config.
         Exciton(const SystemConfiguration&, const ExcitonConfiguration&);
 
         // Initialize exciton passing directly a System object instead of a file using removed bands
         Exciton(const System&, int ncell = 20, int nbands = 1, int nrmbands = 0, 
-                 const arma::rowvec& parameters = {1, 5, 1}, const arma::rowvec& Q = {0., 0., 0.});
+                 const arma::rowvec& parameters = {1, 5, 1}, const arma::rowvec& Q = {0., 0., 0.},
+                 const std::string& = "keldysh");
 
         // Initialize exciton passing directly a System object instead of a file using bands vector
         Exciton(const System&, int ncell = 20, const arma::ivec& bands = {0, 1}, 
-                 const arma::rowvec& parameters = {1, 5, 1}, const arma::rowvec& Q = {0., 0., 0.});
+                 const arma::rowvec& parameters = {1, 5, 1}, const arma::rowvec& Q = {0., 0., 0.},
+                 const std::string& = "keldysh");
 
         ~Exciton();
 
@@ -168,7 +178,8 @@ class Exciton : public System {
                                                 int nrcells = 15);
 
         // Initializers
-        void initializeExcitonAttributes(int, const arma::ivec&, const arma::rowvec&, const arma::rowvec&);
+        void initializeExcitonAttributes(int, const arma::ivec&, const arma::rowvec&, const arma::rowvec&,
+                                         const std::string&);
         void initializeExcitonAttributes(const ExcitonConfiguration&);
         void initializeBasis();
         void initializeResultsH0(bool triangular = false);
