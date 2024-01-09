@@ -184,7 +184,8 @@ void printHeader(){
     std::cout << "+---------------------------------------------------------------------------+" << std::endl;
     std::cout << "|                                                                           |" << std::endl;
     std::cout << "|                                     Xatu                                  |" << std::endl;
-    std::cout << "|                               v1.0 - 01/07/2023                           |" << std::endl;
+    std::cout << "|                            with Muonium additions                         |" << std::endl;
+    std::cout << "|                               v1.0 - 09/01/2024                           |" << std::endl;
     std::cout << "|                    https://github.com/alejandrojuria/xatu                 |" << std::endl;
     std::cout << "|                                                                           |" << std::endl;
     std::cout << "|                                  [Authors]                                |" << std::endl;

@@ -38,10 +38,10 @@ void Exciton::initializeExcitonAttributes(int ncell, const arma::ivec& bands,
         this->eps_s_ = parameters(1);
         this->r0_ = parameters(2);
     }
-    this->interactionType_ = "keldysh";
+    this->interactionType_ = interactionType;
     this->cutoff_     = ncell/2.5; // Default value, seems to preserve crystal point group
 
-    if(r0 == 0){
+    if(r0 == 0 && interactionType == "keldysh"){
         throw std::invalid_argument("Error: r0 must be non-zero");
     }
 }
@@ -57,8 +57,14 @@ void Exciton::initializeExcitonAttributes(const ExcitonConfiguration& cfg){
     int ncell        = cfg.excitonInfo.ncell;
     int nbands       = cfg.excitonInfo.nbands;
     arma::ivec bands = cfg.excitonInfo.bands;
-    arma::rowvec parameters = {cfg.excitonInfo.eps(0), cfg.excitonInfo.eps(1), cfg.excitonInfo.eps(2)};
     arma::rowvec Q   = cfg.excitonInfo.Q;
+    arma::rowvec parameters;
+
+    if (cfg.excitonInfo.interactionType == "coulomb") {
+        parameters = {cfg.excitonInfo.eps(0)};
+    } else {
+        parameters = {cfg.excitonInfo.eps(0), cfg.excitonInfo.eps(1), cfg.excitonInfo.eps(2)};
+    }
 
     if (bands.empty()){
         bands = arma::regspace<arma::ivec>(- nbands + 1, nbands);
@@ -462,7 +468,6 @@ std::complex<double> Exciton::interactionTermFT(const arma::cx_vec& coefsK,
             term += Ic * conj(Iv) * keldyshFT(k - k2 + G, r0, eps_s, eps_m, unitCellArea, totalCells,
                                               arma::norm(reciprocalLattice.row(0)) / totalCells);
         } else {
-            std::cout << "coulomb" << std::endl;
             // if Coulomb interaction
             term += Ic * conj(Iv) * coulombFT(k - k2 + G, eps_r, unitCellArea, totalCells,
                                               arma::norm(reciprocalLattice.row(0)) / totalCells);
@@ -707,7 +712,6 @@ arma::cx_mat Exciton::motifFTMatrix(const arma::rowvec& k, const arma::mat& cell
                                                                         eps_s, eps_m,
                                                                         arma::norm(bravaisLattice.row(0)) * cutoff_ + 1E-5, a);
             } else {
-                std::cout << "coulomb" << std::endl;
                 motifFT(fAtomIndex, sAtomIndex) = coulombMotifFourierTransform(firstAtom, secondAtom,
                                                                                k, cells, totalCells, eps_r,
                                                                                arma::norm(bravaisLattice.row(0)) * cutoff_ + 1E-5, a);
