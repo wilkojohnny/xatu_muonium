@@ -207,8 +207,8 @@ end do
 
 
 !excitons
-do ialpha=1,2
-  do ialphap=1,2
+do ialpha=1,3
+  do ialphap=1,3
     call broad_vector(type_broad,norb_ex_cut,e_ex,skubo_ex_int(ialpha,ialphap,:), &
     nw,wp,sigma_w_ex(ialpha,ialphap,:),eta)
   end do
@@ -340,15 +340,15 @@ do iR=1,nR
   do ialphap=1,ialpha
     Rx=Rvec(iR,1)
     Ry=Rvec(iR,2)
-    Rz=0.0d0
+    Rz=Rvec(iR, 3)
 
     hderhop(1,iR,ialpha,ialphap)=complex(0.0d0,Rx)*hhop(ialpha,ialphap,iR)
     hderhop(2,iR,ialpha,ialphap)=complex(0.0d0,Ry)*hhop(ialpha,ialphap,iR)
-    hderhop(3,iR,ialpha,ialphap)=0.0d0
+    hderhop(3,iR,ialpha,ialphap)=complex(0.0d0,Rz)*hhop(ialpha,ialphap,iR)
   
     sderhop(1,iR,ialpha,ialphap)=complex(0.0d0,Rx)*shop(ialpha,ialphap,iR)
     sderhop(2,iR,ialpha,ialphap)=complex(0.0d0,Ry)*shop(ialpha,ialphap,iR)
-    sderhop(3,iR,ialpha,ialphap)=0.0d0
+    sderhop(3,iR,ialpha,ialphap)=complex(0.0d0,Rz)*shop(ialpha,ialphap,iR)
 
   end do
   end do
@@ -400,7 +400,7 @@ do ialphap=1,ialpha
   do iRp=1,nR
     Rx=Rvec(iRp,1)
     Ry=Rvec(iRp,2)
-    Rz=0.0d0
+    Rz=Rvec(iRp,3)
     phase=complex(0.0d0,rkx*Rx+rky*Ry+rkz*Rz)
     factor=exp(phase)     
               
