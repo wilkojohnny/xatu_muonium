@@ -8,7 +8,7 @@ ROOT_DIR := $(shell dirname $(PWD))
 INCLUDE = -I$(ROOT_DIR)/include
 
 # Libraries
-LIBS = -DARMA_DONT_USE_WRAPPER -L$(ROOT_DIR) -lxatu -larmadillo -lopenblas -llapack -fopenmp
+LIBS = -DARMA_DONT_USE_WRAPPER -L$(ROOT_DIR) -lxatu -larmadillo -lopenblas -llapack -fopenmp -larpack
 
 all: hbn_base hbn_davidson hbn_spin
 
