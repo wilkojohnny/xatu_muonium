@@ -22,7 +22,7 @@ int main(int argc, char* argv[]){
     int ncell = 40;
     int nstates = 8;
     arma::rowvec parameters = {1., 1., 10.};
-    std::string modelfile = "../models/hBN.txt";    
+    std::string modelfile = "../models/hBN.model";    
     
     xatu::SystemConfiguration config = xatu::SystemConfiguration(modelfile);
     xatu::Exciton bulkExciton = xatu::Exciton(config, ncell, nbands, nrmbands, parameters);
