@@ -1329,7 +1329,6 @@ double Exciton::edgeFermiGoldenRule(const Exciton& targetExciton, const arma::cx
                             keldyshMotifFourierTransform(firstAtom, secondAtom, meshBZ_.row(i) - k, cells,
                                                          totalCells, r0, eps_s, eps_m, cutoff, a);
                 } else {
-                    std::cout << "coulomb" << std::endl;
                     ftMotifStack(fAtomIndex, sAtomIndex, i) =
                             coulombMotifFourierTransform(firstAtom, secondAtom, meshBZ_.row(i) - k, cells,
                                                          totalCells, eps_r, cutoff, a);

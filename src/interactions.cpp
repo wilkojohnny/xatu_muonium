@@ -56,7 +56,7 @@ double coulomb(double r, double eps_r, double cutoff, double a) {
     } else if (r > cutoff) {
         potential_value = 0.;
     } else{
-        potential_value = ec/(4 * PI * eps0 * eps_r * r * 1e-10); // 1e-10 is to convert angstroms to m (i think thats the units?)
+        potential_value = ec/(4 * PI * eps0 * eps_r * r * 1e-10);
     }
 
     return potential_value;
@@ -188,7 +188,7 @@ std::complex<double> keldyshMotifFourierTransform(const arma::rowvec& firstAtom,
  * @param k kpoint where we evaluate the FT.
  * @param cells Matrix with the unit cells over which we sum to compute the lattice FT.
  * @param totalCells Number of unit cells of the system.
- * @return Motif lattice Fourier transform of the Keldysh potential at k.
+ * @return Motif lattice Fourier transform of the Coulomb potential at k.
  */
 std::complex<double> coulombMotifFourierTransform(const arma::rowvec& firstAtom, const arma::rowvec& secondAtom,
                                                   const arma::rowvec& k, const arma::mat& cells, int totalCells,
