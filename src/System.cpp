@@ -38,7 +38,6 @@ System::System(const System& system) : Crystal(system){
  * @param configuration SystemConfiguration object obtained from config. file.
  */
 System::System(const SystemConfiguration& configuration) : Crystal(){
-
 	initializeCrystalAttributes(configuration);
 	initializeSystemAttributes(configuration);
 };

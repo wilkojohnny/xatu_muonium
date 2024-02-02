@@ -1,6 +1,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine skubo_w(nR,norb,norb_ex,nv_ex,nc_ex,nv,Rvec,R,B,hhop,shop,npointstotal,rkx, &
-rky,rkz,fk_ex,e_ex,eigval_stack,eigvec_stack)
+rky,rkz,ndim,fk_ex,e_ex,eigval_stack,eigvec_stack)
 implicit real*8 (a-h,o-z)
 
 !out of subroutine arrays 
@@ -94,8 +94,15 @@ eta=eta/27.211385d0
   
 !get unit cell volume
 call crossproduct(R(1,1),R(1,2),R(1,3),R(2,1), &
-R(2,2),R(2,3),cx,cy,cz)         
-vcell=sqrt(cx**2+cy**2+cz**2)
+R(2,2),R(2,3),cx,cy,cz)
+if (ndim == 2) then
+  vcell=sqrt(cx**2+cy**2+cz**2)
+else if (ndim == 1) then
+  vcell = sqrt(R(1,1)**2 + R(1,2)**2 + R(1,3)**2)
+else
+  ! for 3D
+  vcell = R(3,1)*cx + R(3,2)*cy + R(3,3)*cz
+end if
  
 !SP arrays
 allocate (wp(nw))
@@ -150,7 +157,6 @@ write(*,*) 'Conductivity: mapping the BZ...'
 !!$OMP PRIVATE(hk_ev,e,pgaugekernel,pgauge,vjseudoa,vjseudob,vme), &
 !!$OMP PRIVATE(nj,iex,ib,nv_ip,nc_ip,j)
 do ibz=1,npointstotal
-  !write(*,*) 'point:',ibz,npointstotal         
   rkxp=rkx(ibz)
   rkyp=rky(ibz)
   rkzp=rkz(ibz)
@@ -207,8 +213,8 @@ end do
 
 
 !excitons
-do ialpha=1,2
-  do ialphap=1,2
+do ialpha=1,3
+  do ialphap=1,3
     call broad_vector(type_broad,norb_ex_cut,e_ex,skubo_ex_int(ialpha,ialphap,:), &
     nw,wp,sigma_w_ex(ialpha,ialphap,:),eta)
   end do
@@ -340,15 +346,15 @@ do iR=1,nR
   do ialphap=1,ialpha
     Rx=Rvec(iR,1)
     Ry=Rvec(iR,2)
-    Rz=0.0d0
+    Rz=Rvec(iR, 3)
 
     hderhop(1,iR,ialpha,ialphap)=complex(0.0d0,Rx)*hhop(ialpha,ialphap,iR)
     hderhop(2,iR,ialpha,ialphap)=complex(0.0d0,Ry)*hhop(ialpha,ialphap,iR)
-    hderhop(3,iR,ialpha,ialphap)=0.0d0
+    hderhop(3,iR,ialpha,ialphap)=complex(0.0d0,Rz)*hhop(ialpha,ialphap,iR)
   
     sderhop(1,iR,ialpha,ialphap)=complex(0.0d0,Rx)*shop(ialpha,ialphap,iR)
     sderhop(2,iR,ialpha,ialphap)=complex(0.0d0,Ry)*shop(ialpha,ialphap,iR)
-    sderhop(3,iR,ialpha,ialphap)=0.0d0
+    sderhop(3,iR,ialpha,ialphap)=complex(0.0d0,Rz)*shop(ialpha,ialphap,iR)
 
   end do
   end do
@@ -400,7 +406,7 @@ do ialphap=1,ialpha
   do iRp=1,nR
     Rx=Rvec(iRp,1)
     Ry=Rvec(iRp,2)
-    Rz=0.0d0
+    Rz=Rvec(iRp,3)
     phase=complex(0.0d0,rkx*Rx+rky*Ry+rkz*Rz)
     factor=exp(phase)     
               
