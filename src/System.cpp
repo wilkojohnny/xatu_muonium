@@ -148,7 +148,7 @@ void System::solveBands(arma::rowvec& k, arma::vec& eigval, arma::cx_mat& eigvec
 
 	if (!overlapMatrices.empty()){
 		h *= auToEV;
-		orthogonalize_hamiltonian(k, h, triangular);	
+		orthogonalize_hamiltonian(k, h, triangular);
 	}
 
 	arma::eig_sym(eigval, eigvec, h);
@@ -232,19 +232,34 @@ void System::orthogonalize_hamiltonian(const arma::rowvec& k, arma::cx_mat& hami
 	arma::cx_mat eigvec;
 	arma::eig_sym(eigval, eigvec, s);
 
+    arma::vec old_eigval = eigval;
+    arma::cx_vec ceigval = arma::zeros<arma::cx_mat>(eigval.n_elem);
 	try{
-		eigval = 1./arma::sqrt(eigval);
+        std::complex<double> i(0, 1);
+        eigval = 1. / arma::sqrt(eigval);
+        ceigval = arma::conv_to<arma::cx_vec>::from(eigval);
+        // fix complex numbers
+        arma::Col naneigs = arma::find_nonfinite(ceigval);
+        for (int j = 0; j < naneigs.n_rows; j++) {
+            ceigval(naneigs(j)) = -i / std::sqrt(std::abs(old_eigval(naneigs(j))));
+        }
 	}
 	catch(const std::exception& e){
 		throw std::invalid_argument("Zero or negative overlap eigenvalues found, exiting...");
 	}
-	
-	arma::cx_mat sRoot = arma::zeros<arma::cx_mat>(eigval.n_elem, eigval.n_elem);
-	sRoot.diag() = arma::conv_to<arma::cx_vec>::from(eigval);
+
+	arma::cx_mat sRoot = arma::zeros<arma::cx_mat>(ceigval.n_elem, ceigval.n_elem);
+    arma::cx_mat sRootT = arma::zeros<arma::cx_mat>(ceigval.n_elem, ceigval.n_elem);
+	sRoot.diag() = ceigval;
+    sRootT = sRoot.t();
 	sRoot = eigvec*sRoot*eigvec.t();
+    sRootT = eigvec*sRootT*eigvec.t();
 
 	// // states = arma::inv_sympd(eigvec) * states;
-	hamiltonian = sRoot * hamiltonian * sRoot;
+	hamiltonian = sRoot * hamiltonian * sRootT;
+    if (!hamiltonian.is_hermitian(1e-8)) {
+        throw std::invalid_argument("Overlap matrices cannot be made Hermitian. Check input.");
+    }
 }
 
 // /*------------------ Utilities/Additional observables ------------------*/

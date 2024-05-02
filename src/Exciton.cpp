@@ -775,6 +775,7 @@ void Exciton::initializeResultsH0(bool triangular){
     for (int j = 0; j < auxEigVal.n_rows; j++) {
         std::cout << j << "\t" << auxEigVal(j) << std::endl << std::flush;
     }
+    exit(1);
 
     for (int i = 0; i < nk; i++){
         arma::rowvec k = kpoints.row(i);
