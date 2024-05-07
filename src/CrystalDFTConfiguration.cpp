@@ -417,7 +417,7 @@ void CrystalDFTConfiguration::mapContent(bool debug){
     systemInfo.ndim           = ndim;
     systemInfo.bravaisLattice = bravaisLattice;
     systemInfo.motif          = motif;
-    systemInfo.filling        = totalElectrons/2;
+    systemInfo.filling        = totalElectrons/2.;
     systemInfo.bravaisVectors = bravaisVectors;
     systemInfo.overlap        = overlapMatrices;
 
