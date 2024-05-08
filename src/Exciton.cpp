@@ -767,10 +767,7 @@ void Exciton::initializeResultsH0(bool triangular){
     calculateInverseReciprocalMatrix();
     std::complex<double> imag(0, 1);
 
-    arma::rowvec k0 = {0, 0, 0};
-
     std::cout << "Diagonalizing H0 for all k points... " << std::flush;
-    solveBands(k0, auxEigVal, auxEigvec, triangular);
 
     for (int i = 0; i < nk; i++){
         arma::rowvec k = kpoints.row(i);
