@@ -54,7 +54,6 @@ void Crystal::initializeCrystalAttributes(const SystemConfiguration& configurati
  *  of the dimension of the vector space they span.
  */
 void Crystal::calculateReciprocalLattice(){
-    std::cout << ndim << std::endl;
 	reciprocalLattice_ = arma::zeros(ndim, 3);
 	arma::mat coefficient_matrix = bravaisLattice;
 

@@ -493,11 +493,13 @@ std::complex<double> Exciton::blochCoherenceFactor(const arma::cx_vec& coefs1, c
     std::complex<double> imag(0, 1);
     arma::cx_vec coefs = arma::conj(coefs1) % coefs2;
     arma::cx_vec phases = arma::ones<arma::cx_vec>(basisdim);
+    int current_phase_pos = 0;
     for(int i = 0; i < natoms; i++){
         int species = motif.row(i)(3);
         arma::rowvec atomPosition = motif.row(i).subvec(0, 2);
-        phases.subvec(i*orbitals(species), (i+1)*orbitals(species) - 1) *= 
+        phases.subvec(current_phase_pos, current_phase_pos + orbitals(species) - 1) *=
         exp(imag*arma::dot(k1 - k2 + G, atomPosition));
+        current_phase_pos += orbitals(species);
     }
 
     std::complex<double> factor = arma::dot(coefs, phases);
