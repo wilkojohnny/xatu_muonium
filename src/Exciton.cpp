@@ -770,6 +770,12 @@ void Exciton::initializeResultsH0(bool triangular){
     std::complex<double> imag(0, 1);
 
     std::cout << "Diagonalizing H0 for all k points... " << std::flush;
+    arma::rowvec k = {0, 0, 0};
+    solveBands(k, auxEigVal, auxEigvec, triangular);
+    for (int i=0; i < 2600; i++) {
+        std::cout << i+1 << auxEigVal[i] << std::endl;
+    }
+    
 
     for (int i = 0; i < nk; i++){
         arma::rowvec k = kpoints.row(i);
