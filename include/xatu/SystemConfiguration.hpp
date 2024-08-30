@@ -30,6 +30,8 @@ class SystemConfiguration : public virtual ConfigurationBase {
         arma::mat bravaisVectors;
         /// Vector storing the number of orbitals for each chemical species.
         arma::urowvec norbitals;
+        /// are we including spin?
+        bool includespin = false;
     };
         
     public:

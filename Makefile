@@ -1,14 +1,14 @@
 # Compiler & compiler flags
-CC = g++
+CC = g++-13
 FC = gfortran
 CFLAGS = -O2 -Wall -lm
 FFLAGS = -O2 -Wall -Wno-tabs -lm
 
 # Include folders
-INCLUDE = -I$(PWD)/include
+INCLUDE = -I$(PWD)/include -I/opt/homebrew/include
 
 # Libraries
-LIBS = -DARMA_DONT_USE_WRAPPER -L$(PWD) -lxatu -larmadillo -lopenblas -llapack -larpack -fopenmp -lgfortran
+LIBS = -DARMA_DONT_USE_WRAPPER -L$(PWD) -L/opt/homebrew/lib -lxatu -larmadillo -lopenblas -llapack -larpack -fopenmp -lgfortran
 
 # Compilation targets
 CC_SRC_FILES := $(wildcard src/*.cpp)

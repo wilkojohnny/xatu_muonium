@@ -418,9 +418,9 @@ void CrystalDFTConfiguration::mapContent(bool debug){
     systemInfo.bravaisLattice = bravaisLattice;
     systemInfo.motif          = motif;
     if (totalElectrons % 2 == 1){
-        systemInfo.filling = (totalElectrons + 1) / 2;
+        systemInfo.filling = (totalElectrons + 1) / 2.;
     } else {
-        systemInfo.filling = totalElectrons / 2;
+        systemInfo.filling = totalElectrons / 2.;
     }
     systemInfo.bravaisVectors = bravaisVectors;
     systemInfo.overlap        = overlapMatrices;
@@ -439,19 +439,24 @@ void CrystalDFTConfiguration::mapContent(bool debug){
     else if(MAGNETIC_FLAG){
         systemInfo.filling   *= 2;
         systemInfo.norbitals *= 2;
+        systemInfo.includespin = true;
 
         arma::mat spinUpBlock = {{1, 0}, {0, 0}};
         arma::mat spinDownBlock = {{0, 0}, {0, 1}};
 
         arma::cx_cube newOverlapMatrices;
         for(unsigned int i = 0; i < alphaMatrices.n_slices; i++){
-            arma::cx_mat totalFockMatrix = arma::kron(alphaMatrices.slice(i), spinUpBlock) + arma::kron(betaMatrices.slice(i), spinDownBlock);
+            //arma::cx_mat totalFockMatrix = arma::kron(alphaMatrices.slice(i), spinUpBlock) + arma::kron(betaMatrices.slice(i), spinDownBlock);
+            arma::cx_mat totalFockMatrix = arma::kron(spinUpBlock, alphaMatrices.slice(i)) + arma::kron(spinDownBlock, betaMatrices.slice(i));
             this->fockMatrices = arma::join_slices(this->fockMatrices, totalFockMatrix);
 
-            arma::cx_mat totalOverlapMatrix = arma::kron(this->overlapMatrices.slice(i), arma::eye(2, 2));
+            //arma::cx_mat totalOverlapMatrix = arma::kron(this->overlapMatrices.slice(i), arma::eye(2, 2) );
+            arma::cx_mat totalOverlapMatrix = arma::kron(arma::eye(2, 2), this->overlapMatrices.slice(i)  );
             newOverlapMatrices = arma::join_slices(newOverlapMatrices, totalOverlapMatrix);
         }
         systemInfo.overlap    = newOverlapMatrices;
+    } else {
+        systemInfo.includespin = false;
     }
     systemInfo.hamiltonian    = fockMatrices;
 

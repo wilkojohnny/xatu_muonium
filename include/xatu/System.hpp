@@ -20,6 +20,7 @@ class System : public Crystal{
     protected:
         int basisdim_, filling_, fermiLevel_;
         std::string systemName;
+        bool includespin_;
 
         arma::urowvec orbitals_;
         arma::cx_cube hamiltonianMatrices_;
@@ -39,6 +40,8 @@ class System : public Crystal{
         const arma::cx_cube& hamiltonianMatrices = hamiltonianMatrices_;
         // Overlap matrices
         const arma::cx_cube& overlapMatrices = overlapMatrices_;
+        // Returns 1 if doing spin
+        const bool& includespin = includespin_;
 
 
     //// Methods

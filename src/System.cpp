@@ -29,6 +29,7 @@ System::System(const System& system) : Crystal(system){
 	filling_			 = system.filling;
 	fermiLevel_			 = filling_ - 1;
 	basisdim_ 			 = system.basisdim;
+
 }
 
 /**
@@ -56,6 +57,7 @@ void System::initializeSystemAttributes(const SystemConfiguration& configuration
 	overlapMatrices_     = configuration.systemInfo.overlap;
 	filling_			 = configuration.systemInfo.filling;
 	fermiLevel_			 = filling_ - 1;
+    includespin_          = configuration.systemInfo.includespin;
 
     int basisdim = 0;
     for(int i = 0; i < natoms; i++){

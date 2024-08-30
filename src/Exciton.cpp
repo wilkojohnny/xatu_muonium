@@ -493,13 +493,23 @@ std::complex<double> Exciton::blochCoherenceFactor(const arma::cx_vec& coefs1, c
     std::complex<double> imag(0, 1);
     arma::cx_vec coefs = arma::conj(coefs1) % coefs2;
     arma::cx_vec phases = arma::ones<arma::cx_vec>(basisdim);
+
     int current_phase_pos = 0;
-    for(int i = 0; i < natoms; i++){
-        int species = motif.row(i)(3);
-        arma::rowvec atomPosition = motif.row(i).subvec(0, 2);
-        phases.subvec(current_phase_pos, current_phase_pos + orbitals(species) - 1) *=
+    float norbital_divider = 1.;
+    int atom_orbital_loop_length = natoms;
+    if (includespin) {
+        // if we're including spin, make the norbitals /2 and make the loop double
+        norbital_divider = 2.;
+        atom_orbital_loop_length *= 2;
+    }
+
+    for(int i = 0; i < atom_orbital_loop_length; i++) {
+        int species = motif.row(i % natoms)(3);
+        arma::rowvec atomPosition = motif.row(i % natoms).subvec(0, 2);
+        int norbitals = orbitals(species) / norbital_divider;
+        phases.subvec(current_phase_pos, current_phase_pos + norbitals - 1) *=
         exp(imag*arma::dot(k1 - k2 + G, atomPosition));
-        current_phase_pos += orbitals(species);
+        current_phase_pos += norbitals;
     }
 
     std::complex<double> factor = arma::dot(coefs, phases);
@@ -770,12 +780,6 @@ void Exciton::initializeResultsH0(bool triangular){
     std::complex<double> imag(0, 1);
 
     std::cout << "Diagonalizing H0 for all k points... " << std::flush;
-    arma::rowvec k = {0, 0, 0};
-    solveBands(k, auxEigVal, auxEigvec, triangular);
-    for (int i=0; i < 2600; i++) {
-        std::cout << i+1 << auxEigVal[i] << std::endl;
-    }
-    
 
     for (int i = 0; i < nk; i++){
         arma::rowvec k = kpoints.row(i);
@@ -944,6 +948,8 @@ void Exciton::BShamiltonian(const arma::imat& basis){
     }
        
     HBS_ = HBS + HBS.t();
+
+    std::cout << std::endl << HBS << std::endl;
     std::cout << "Done" << std::endl;
 };
 
